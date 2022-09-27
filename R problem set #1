@@ -1,0 +1,52 @@
+library(readxl)
+library(lmtest)
+library(plotly)
+library(stats)
+library(olsrr)
+library(sandwich)
+
+
+attach(Bank_Wages)
+
+hist(EDUC, breaks = 15, xlab="EDUCATION", main= "Histogram of education")
+hist(LOGSAL, breaks = 15, xlab="SALARY", main= "Histogram of Log Salary")
+
+plot(EDUC, LOGSAL, xlab="EDUCATION", ylab="LOG SALLARY")
+
+#regression of the basline specification
+model1 <- lm(LOGSAL~ EDUC + LOGSALBEGIN + GENDER + MINORITY)
+summary(model1)
+model2 <- lm(LOGSAL~ EDUC + GENDER + MINORITY)
+summary(model2)
+#The first specification model expalins around 80% of the variation in salary with significance of all the 
+#independent variables. Dropping the LOGSALBEGIN which is significant in the model leads to a lower fitness quality 
+#of the model and explanation of variation with R square dropping to 59%.
+
+#Residuals Graph and Normallity
+lmtest::dwtest(model1)
+plot(model1)
+ols_plot_resid_fit(model1)
+#The diagonal line in the the Q-Q gragh is an indication of the normality of the residuals. This is also supported
+#by the Residuals vs fitted graph where must of the residuals are consirtrated around zero with a farily stright line 
+#at zero with the existance of few outliers. A third test to check for normality which also concluds the same resuilt 
+#is the Durbin-Watson test with a p-value of 0.018.
+
+#Breush-Pagan test oucomes show the absence of heteroscedasticiy: Absence
+lmtest::bptest(model1)
+lmtest::bptest(model2)
+
+#the absance of autocorrelation
+acf(model1$residuals, type = "correlation", main="Model 1 ACF Test")
+acf(model2$residuals, type = "correlation", main="Model 2 ACF Test")
+bgtest(LOGSAL~ EDUC + LOGSALBEGIN + GENDER + MINORITY)
+#The results of the ACF autocorrelation test shows that the correlation almost dies out at the 4th lag. This result 
+#chimes with the normality test and the absence of autocorrelation which is significant was expectd due to the 
+#existance normality.
+
+#par(mfrow=c(2,2)
+#resid(model1)
+
+#robust estimation of the coefficients....sandwich
+coeftest(model1, vcov = vcovHC(model1, "HC1"))
+#the conclusion and significance of the variables are identical to that of our model concluding the same answer.
+
